@@ -52,19 +52,7 @@ For each patient, three visual outputs are generated:
 ### Export
 Final figures are saved as high-resolution PNG images suitable for documentation and research reporting.
 
----
 
-## Project Structure
-├── data/
-│ ├── patient_id/
-│ │ ├── patient_t2w.nii.gz
-│ │ └── patient_gland.nii.gz
-│
-├── results/
-│ ├── patient_final.png
-
-
----
 
 ## Outputs
 The generated visualizations verify:
