@@ -1,26 +1,29 @@
+import os
 import SimpleITK as sitk
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 
-# --- Paths ---
-data_dir = "data"
+#  Output directory
 output_dir = "results_canny_contour"
 os.makedirs(output_dir, exist_ok=True)
 
-# List of patient IDs
-patient_ids = ["10005", "10040", "10043", "10048"]
+#detecting folders
+patient_ids = [
+    folder for folder in os.listdir()
+    if os.path.isdir(folder)
+]
 
 # Processing each patient
 for pid in patient_ids:
     print(f"\nProcessing patient {pid} with Canny contour...")
 
-    # File paths
-    t2w_file = os.path.join(data_dir, pid, f"{pid}_t2w.nii.gz")
-    gland_file = os.path.join(data_dir, pid, f"{pid}_gland.nii.gz")
+    # File paths (inside each patient folder)
+    t2w_file = os.path.join(pid, f"{pid}_t2w.nii.gz")
+    gland_file = os.path.join(pid, f"{pid}_gland.nii.gz")
 
     if not (os.path.exists(t2w_file) and os.path.exists(gland_file)):
-        print(f" Skipping {pid}, missing files")
+        print(f"Skipping {pid}, required files not found")
         continue
 
     # Load MRI and gland mask
@@ -35,8 +38,12 @@ for pid in patient_ids:
     # Normalize T2W for display
     t2w_norm = cv2.normalize(t2w_slice, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
 
-    # Apply mask to keep only prostate region
-    masked = cv2.bitwise_and(t2w_norm, t2w_norm, mask=(mask_slice > 0).astype(np.uint8))
+    # Applying mask to keep only prostate region
+    masked = cv2.bitwise_and(
+        t2w_norm,
+        t2w_norm,
+        mask=(mask_slice > 0).astype(np.uint8)
+    )
 
     # Blur before Canny to reduce noise
     blurred = cv2.GaussianBlur(masked, (5, 5), 1.4)
@@ -45,7 +52,11 @@ for pid in patient_ids:
     edges = cv2.Canny(blurred, threshold1=50, threshold2=150)
 
     # Find contours from Canny edges
-    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contours, _ = cv2.findContours(
+        edges,
+        cv2.RETR_EXTERNAL,
+        cv2.CHAIN_APPROX_SIMPLE
+    )
 
     # Orientation fix (if needed)
     if t2w_slice.shape[1] < t2w_slice.shape[0]:
@@ -70,12 +81,19 @@ for pid in patient_ids:
     # Contour Overlay
     axes[2].imshow(t2w_disp, cmap="gray")
     for contour in contours:
-        axes[2].plot(contour[:, 0, 0], contour[:, 0, 1], color="red", linewidth=1.5)
+        axes[2].plot(
+            contour[:, 0, 0],
+            contour[:, 0, 1],
+            color="red",
+            linewidth=1.5
+        )
     axes[2].set_title("Canny Contour Overlay")
     axes[2].axis("off")
 
     # Title and save
-    plt.suptitle(f"Patient {pid} - Canny Contours", fontsize=16, fontweight="bold")
+    plt.suptitle(f"Patient {pid} - Canny Contours",
+                 fontsize=16,
+                 fontweight="bold")
     plt.tight_layout()
     plt.subplots_adjust(top=0.85)
 
@@ -83,6 +101,6 @@ for pid in patient_ids:
     fig.savefig(out_path, bbox_inches="tight", dpi=300, facecolor="white")
     plt.close(fig)
 
-    print(f" Saved {out_path}")
+    print(f"Saved {out_path}")
 
-print("\n  All patients processed with Canny contour detection. Results in:", output_dir)
+print("\nAll patients processed with Canny contour detection.")
